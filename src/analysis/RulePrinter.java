@@ -11,7 +11,7 @@ public class RulePrinter {
 
 	public static void printRules(String filename, ArrayList<Rule> rules, boolean append) {
 		try {
-			FileWriter f = new FileWriter(filename, append);
+			FileWriter f = new FileWriter("results/" + filename, append);
 			System.out.println("Printing " + rules.size() + " rules to " + filename);
 			for (Rule r : rules) {
 				f.write(r.toString() + "\n");
@@ -27,7 +27,7 @@ public class RulePrinter {
 	
 	public static void printRules(String filename, HashSet<Rule> rules, boolean append) {
 		try {
-			FileWriter f = new FileWriter(filename, append);
+			FileWriter f = new FileWriter("results/" + filename, append);
 			for (Rule r : rules) {
 				f.write(r.toString() + "\n");
 			}
@@ -41,7 +41,7 @@ public class RulePrinter {
 	public static void printRules(String filename, TreeMap<String,Double> map) {
 		Set<String> keys = map.keySet();
 		try {
-			FileWriter f = new FileWriter(filename);
+			FileWriter f = new FileWriter("results/" + filename);
 			for (String k : keys) {
 				double count = map.get(k);
 				f.write(k + "\t" + count + "\n");
@@ -49,6 +49,18 @@ public class RulePrinter {
 			f.close();
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+	}
+	
+	public static void printPredicates(String filename, ArrayList<Predicate> preds, boolean append) {
+		try {
+			FileWriter f = new FileWriter("results/" + filename, append);
+			System.out.println("Printing " + preds.size() + " predicates to " + filename);
+			for (Predicate pred : preds) {
+				f.write(pred.toString() + "\n");
+			}
+		} catch(IOException ex) {
+			
 		}
 	}
 	

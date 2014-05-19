@@ -109,11 +109,31 @@ public class pipeline {
 			return rules;
 		
 	}
-	/*
+	
+	public static ArrayList<Predicate> getLinkingPreds() {
+		ArrayList<Predicate> linkingPreds = new ArrayList<Predicate>();
+		
+		String query = "SELECT * from linkers";
+		
+		try {
+			Statement stmt = connection.createStatement();
+			ResultSet rset = stmt.executeQuery(query);
+			while (rset.next()) {
+				String relation = rset.getString("relation");
+				String arg1 = rset.getString("argclass1");
+				String arg2 = rset.getString("argclass2");
+				linkingPreds.add(new Predicate(relation,arg1,arg2));
+			}
+		} catch(SQLException ex) {
+			
+		}
+		return linkingPreds;
+	}
+	
 	public static ArrayList<Rule> getSherlockRules() {
 		ArrayList<Rule> rules = new ArrayList<Rule>();
 		
-		String query = "SELECT rule FROM rules WHERE rule LIKE '%" + phrase[i] + "%'";
+		String query = "SELECT rule FROM rules WHERE rule LIKE '%),%'";
 		//String query = "SELECT rule FROM rules";
 		try {
 			Statement stmt = connection.createStatement();
@@ -138,11 +158,18 @@ public class pipeline {
 							terms[7].replace("_A","").replace("_B","").replace("_C","").replace("_"," "), 
 							terms[8].replace("_A","").replace("_B","").replace("_C","").replace("_"," "));
 
-					if (p2.relation.equals(p3.relation) || p1.relation.equals(p3.relation))
-						if ((p1.arg2.equals(p2.arg1))
-								&& (p1.relation.contains(phrase[i]) || p2.relation.contains(phrase[i]))) {
-									rules.add(new Rule(p1, p2, p3));
+					//Make sure rules have same base relation in antecedent and consequent
+					//  and share arguments
+					if (p1.relation.equals(p3.relation)) {
+						if (p1.arg2.equals(p2.arg1)) {
+							rules.add(new Rule(p1, p2, p3));
 						}
+					}
+					else if (p2.relation.equals(p3.relation)) {
+						if (p2.arg2.equals(p1.arg1)) {
+							rules.add(new Rule(p2, p1, p3));
+						}
+					}
 				}
 			}
 		} catch (SQLException e) {
@@ -150,7 +177,7 @@ public class pipeline {
 		}
 		return rules;
 	}
-	*/
+	
 	/*
 	public static ArrayList<Predicate> addLinkersByEntailment() {
 		//Query all length 2 where antecedent is a linker
@@ -354,29 +381,56 @@ public class pipeline {
 		return ubiquity;
 	}
 	
+	public static void partitionRules(ArrayList<Predicate> linkingPreds, ArrayList<Rule> rules) {
+		ArrayList<Rule> linkingRules = new ArrayList<Rule>();
+		ArrayList<Rule> nonLinkingRules = new ArrayList<Rule>();
+		boolean added = false;
+		
+		for (Rule rule : rules) {
+			for (Predicate pred : linkingPreds) {	
+				if (pred.equals(rule.linker)) {
+					linkingRules.add(rule);
+					added = true;
+					break;
+				}
+			}
+			if (!added) {
+				nonLinkingRules.add(rule);
+			}
+			added = false;
+		}
+		
+		RulePrinter.printRules("linking_sherlock_rules.txt", linkingRules, false);
+		RulePrinter.printRules("non_linking_sherlock_rules.txt", nonLinkingRules, false);
+	}
+	
 	public static void main(String[] args) throws SQLException {
-        //for (i = 0; i < phrase.length; i++) {
-        	connection = Connector.setConnection();
-	        DataSet dataInfo = Loader.getData();
-	        //Loader.loadData(dataInfo, connection);
         
-	        //ArrayList<Predicate> extraPreds = addLinkersByEntailment();
-	        
-	        ArrayList<Rule> rules = type1join();
-	        //ArrayList<Rule> sherlockRules = getSherlockRules();
-	        
-	        //TreeMap<String,Double> ubiquity = getLinkingPredsAuto();
-	        //printRules("ubiquity.csv", ubiquity);
-	        RulePrinter.printRules("rulesTotal.csv", rules, true);
-	        //printRules("sherlockRules.csv", sherlockRules);
-	        
-	        //Evaluator.evaluate(rules, sherlockRules, true);
-	        //evalTest(rules, sherlockRules);
-	        //build list of linking predicates
-	        //extract all predicates sharing one linking argument and build up rules
-	        
-	        /*processRules(getLength2rules());*/
-        //}
+    	connection = Connector.setConnection();
+        DataSet dataInfo = Loader.getData();
+        //Loader.loadData(dataInfo, connection);
+    
+        //add a flag so this doesn't need to be commented
+        //ArrayList<Predicate> extraPreds = addLinkersByEntailment();
+        
+        //ArrayList<Rule> rules = type1join();
+        ArrayList<Predicate> linkingPreds = getLinkingPreds();
+        ArrayList<Rule> sherlockRules = getSherlockRules();
+        partitionRules(linkingPreds, sherlockRules);
+        
+        //TreeMap<String,Double> ubiquity = getLinkingPredsAuto();
+        //printRules("ubiquity.csv", ubiquity);
+        //RulePrinter.printRules("rulesTotal.csv", rules, true);
+        RulePrinter.printPredicates("sherlock_linking_predicates.txt", linkingPreds, false);
+        RulePrinter.printRules("sherlock_rules.txt", sherlockRules, false);
+        
+        //Evaluator.evaluate(rules, sherlockRules, true);
+        //evalTest(rules, sherlockRules);
+        //build list of linking predicates
+        //extract all predicates sharing one linking argument and build up rules
+        
+        /*processRules(getLength2rules());*/
+  
         
 	}
 
