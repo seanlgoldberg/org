@@ -16,7 +16,9 @@ public class Rule {
 		return base.toString() + " ^ " + linker.toString() + " -> " + consequent.toString();
 	}
 	
-	public boolean equals(Rule r) {
+	@Override
+	public boolean equals(Object obj) {
+		Rule r = (Rule) obj;
 		/*
 		if (this.base.equals(r.base) &&
 				this.linker.equals(r.linker) &&
@@ -32,5 +34,11 @@ public class Rule {
 		if (this.base.equals(r.base) && this.linker.equals(r.linker)) return true;
 		if (this.base.equals(r.linker) && this.linker.equals(r.base)) return true;
 		return false;
+	}
+	
+	@Override
+	// Simple hack to make set operations work on rules
+	public int hashCode() {
+		return base.hashCode() + linker.hashCode() + consequent.hashCode();
 	}
 }

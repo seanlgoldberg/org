@@ -18,13 +18,20 @@ public class Predicate implements Comparable<Predicate>,Comparator<Predicate>{
 		return (relation + "(" + arg1 + ", " + arg2 + ")");
 	}
 	
-	public boolean equals(Predicate p) {
+	@Override
+	public boolean equals(Object obj) {
+		Predicate p = (Predicate) obj;
 		if (this.relation.equals(p.relation) &&
 				this.arg1.equals(p.arg1) &&
 				this.arg2.equals(p.arg2)) {
 			return true;
 		}
 		return false;
+	}
+	
+	@Override
+	public int hashCode() {
+		return relation.hashCode() + arg1.hashCode() + arg2.hashCode();
 	}
 	
 	public int compareTo(Predicate p) {

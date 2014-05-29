@@ -262,8 +262,8 @@ public class pipeline {
         Set<Rule> ORGsherlockIntersect = Operators.setIntersection(ORGrules, sherlockRules);
         
         //sample rules
-        Set<Rule> ORGsamples = Evaluator.sample(ORGrules,100);
-        Set<Rule> sherlockSamples = Evaluator.sample(sherlockRules, 100);
+        Set<Rule> ORGsamples = Evaluator.sample(ORGrulesMinus,100);
+        Set<Rule> sherlockSamples = Evaluator.sample(sherlockRulesMinus, 100);
         
         /*
         ArrayList<Predicate> sherlockPreds = getSherlockPreds();
