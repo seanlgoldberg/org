@@ -39,7 +39,7 @@ public class pipeline {
 	 * Takes in a ResultSet and does something to it
 	 */
 	public void processRules(ResultSet rset) {
-		ArrayList<String> rules = new ArrayList<String>();
+		Set<String> rules = new HashSet<String>();
 		try {
 			while (rset.next()) {
 				
@@ -52,10 +52,15 @@ public class pipeline {
 	/*
 	 * Produces rules with form R1(X,Y) ^ R2(Y,Z) -> R1(X,Z)
 	 */
-	public static ArrayList<Rule> type1join() {
+	public static Set<Rule> getORGrules(Set<Predicate> linkingPreds) {
 			
-			ArrayList<Rule> rules = new ArrayList<Rule>();
+			Set<Rule> rules = new HashSet<Rule>();
 			
+			String query = "SELECT s1.relation AS relation1, s1.argClass1 AS subject1, s1.argClass2 AS object1, " +
+						    "s2.relation AS relation2, s2.argClass1 AS subject2, s2.argClass2 AS object2 " +
+							"FROM sherlocktypedrelations s1, sherlocktypedrelations s2 " +
+							"WHERE s1.relation=s2.relation AND s1.argClass1=s2.argClass1";
+			/*
 			String query = "SELECT s1.relation AS relation1, s1.argClass1 AS argClass1_1, s1.argClass2 AS argClass2_1, " +
 					"s2.relation AS relation3, s2.argClass1 AS argClass1_3, s2.argClass2 AS argClass2_3, " +
 					"t1.relation AS relation2, t1.argClass1 AS argClass1_2, t1.argClass2 AS argClass2_2 " +
@@ -63,6 +68,7 @@ public class pipeline {
 					"sherlocktypedrelations s2, linkers t1 " +
 					"WHERE s1.argClass1=s2.argClass1 AND s1.argClass2=t1.argClass1 " +
 					"AND s2.argClass2=t1.argClass2 AND s1.relation=s2.relation"; //AND s1.relation LIKE '%" + phrase[i] + "%'";
+			*/
 			
 			/*
 			String query = "SELECT s1.relation AS relation1, s1.argClass1 AS argClass1_1, s1.argClass2 AS argClass2_1, " +
@@ -88,18 +94,24 @@ public class pipeline {
 				ResultSet rset = stmt.executeQuery(query);
 				System.out.println("Successful!");
 				
+				RulePrinter.initializeFile("ORG_rules.txt");
+				
 				while(rset.next()) {
-					
-					Predicate p1 = new Predicate(rset.getString("relation1").replace(", ", ""), 
-							rset.getString("argClass1_1"), rset.getString("argClass2_1"));
-					Predicate p2 = new Predicate(rset.getString("relation2").replace(", ", ""), 
-							rset.getString("argClass1_2"), rset.getString("argClass2_2"));
-					Predicate p3 = new Predicate(rset.getString("relation3").replace(", ", ""), 
-							rset.getString("argClass1_3"), rset.getString("argClass2_3"));
-					
-					Rule newRule = new Rule(p1, p2, p3);
-					rules.add(newRule);
-					
+					for (Predicate p2 : linkingPreds) {
+						//rules.clear();
+						Predicate p1 = new Predicate(rset.getString("relation1").replace(", ", ""), 
+								rset.getString("subject1"), rset.getString("object1"));
+						//Predicate p2 = new Predicate(rset.getString("relation2").replace(", ", ""), 
+							//	rset.getString("argClass1_2"), rset.getString("argClass2_2"));
+						Predicate p3 = new Predicate(rset.getString("relation2").replace(", ", ""), 
+								rset.getString("subject2"), rset.getString("object2"));
+						
+						if ((p1.arg2.equals(p2.arg1)) && (p2.arg2.equals(p3.arg2))) {
+							Rule newRule = new Rule(p1, p2, p3);
+							rules.add(newRule);
+							//RulePrinter.printRules("ORG_rules.txt", rules, true);
+						}
+					}
 				}
 				
 				
@@ -110,10 +122,10 @@ public class pipeline {
 		
 	}
 	
-	public static ArrayList<Predicate> getLinkingPreds() {
-		ArrayList<Predicate> linkingPreds = new ArrayList<Predicate>();
+	public static Set<Predicate> getLinkingPreds() {
+		Set<Predicate> linkingPreds = new TreeSet<Predicate>();
 		
-		String query = "SELECT * from linkers";
+		String query = "SELECT * from sherlocklinkingtypedrelations";
 		
 		try {
 			Statement stmt = connection.createStatement();
@@ -122,7 +134,8 @@ public class pipeline {
 				String relation = rset.getString("relation");
 				String arg1 = rset.getString("argclass1");
 				String arg2 = rset.getString("argclass2");
-				linkingPreds.add(new Predicate(relation,arg1,arg2));
+				Predicate pred = new Predicate(relation,arg1,arg2);
+				linkingPreds.add(pred);
 			}
 		} catch(SQLException ex) {
 			
@@ -130,8 +143,30 @@ public class pipeline {
 		return linkingPreds;
 	}
 	
-	public static ArrayList<Rule> getSherlockRules() {
-		ArrayList<Rule> rules = new ArrayList<Rule>();
+	public static Set<Predicate> getSherlockPreds() {
+		Set<Predicate> sherlockPreds = new HashSet<Predicate>();
+		
+		String query = "SELECT relation, argclass1, argclass2 from sherlocktypedrelations";
+		
+		try {
+			Statement stmt = connection.createStatement();
+			ResultSet rset = stmt.executeQuery(query);
+			while (rset.next()) {
+				String relation = rset.getString("relation");
+				String arg1 = rset.getString("argclass1");
+				String arg2 = rset.getString("argclass2");
+				if (!relation.equals("tag with") && !relation.equals("join") && !relation.equals("to see")) {
+					sherlockPreds.add(new Predicate(relation,arg1,arg2));
+				}
+			}
+		} catch(SQLException ex) {
+			
+		}
+		return sherlockPreds;
+	}
+	
+	public static Set<Rule> getSherlockRules() {
+		Set<Rule> rules = new HashSet<Rule>();
 		
 		String query = "SELECT rule FROM rules WHERE rule LIKE '%),%'";
 		//String query = "SELECT rule FROM rules";
@@ -178,208 +213,6 @@ public class pipeline {
 		return rules;
 	}
 	
-	/*
-	public static ArrayList<Predicate> addLinkersByEntailment() {
-		//Query all length 2 where antecedent is a linker
-		ArrayList<Predicate> linkingPreds = new ArrayList<Predicate>();
-		ArrayList<Predicate> newLinkingPreds = new ArrayList<Predicate>();
-		String query = "SELECT * FROM rules2";
-		String getLinkersQuery = "SELECT * FROM sherlocklinkingtypedrelations";
-		try {
-			Statement stmt = connection.createStatement();
-			Statement stmt2 = connection.createStatement();
-			System.out.println("Trying Query...");
-			ResultSet rset = stmt2.executeQuery(query);
-			ResultSet rsetLinker = stmt.executeQuery(getLinkersQuery);
-			System.out.println("Successful!");
-			
-			while (rsetLinker.next()) {
-				Predicate p = new Predicate(rsetLinker.getString("relation").replace(", ", ""), 
-						rsetLinker.getString("argClass1"), rsetLinker.getString("argClass2"));
-				linkingPreds.add(p);
-			}
-			
-			while(rset.next()) {
-				
-				String r = rset.getString("rule");
-				// parse r into a Rule
-				String delims = "[(,):-]+";
-				String[] terms = r.split(delims);
-				if (terms.length == 6) {
-					Predicate p1 = new Predicate(terms[0].replace("_A","").replace("_B","").replace("_C","").replace("_"," "), 
-							terms[1].replace("_A","").replace("_B","").replace("_C","").replace("_"," "), 
-							terms[2].replace("_A","").replace("_B","").replace("_C","").replace("_"," ")); 
-					Predicate p2 = new Predicate(terms[3].replace("_A","").replace("_B","").replace("_C","").replace("_"," "), 
-							terms[4].replace("_A","").replace("_B","").replace("_C","").replace("_"," "), 
-							terms[5].replace("_A","").replace("_B","").replace("_C","").replace("_"," "));
-					for (int i = 0; i < linkingPreds.size(); i++) {
-						Predicate pTest = linkingPreds.get(i);
-						if (pTest.equals(p1) && !newLinkingPreds.contains(p2)) {
-							System.out.println("Adding " + p2);
-							newLinkingPreds.add(p2);
-						}
-						if (pTest.equals(p2) && !newLinkingPreds.contains(p1)) {
-							System.out.println("Adding " + p1);
-							newLinkingPreds.add(p1);
-						}
-					}
-				}
-			}
-			
-			//add a second inference 
-			
-			System.out.println("Size:" + newLinkingPreds.size());
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		
-		System.out.println("");
-		
-		
-		try {
-			Statement stmt = connection.createStatement();
-			Statement stmt2 = connection.createStatement();
-			System.out.println("Trying Query...");
-			ResultSet rset = stmt2.executeQuery(query);
-			ResultSet rsetLinker = stmt.executeQuery(getLinkersQuery);
-			System.out.println("Successful!");
-			
-			while (rsetLinker.next()) {
-				Predicate p = new Predicate(rsetLinker.getString("relation").replace(", ", ""), 
-						rsetLinker.getString("argClass1"), rsetLinker.getString("argClass2"));
-				linkingPreds.add(p);
-			}
-			
-			while(rset.next()) {
-				
-				String r = rset.getString("rule");
-				// parse r into a Rule
-				String delims = "[(,):-]+";
-				String[] terms = r.split(delims);
-				if (terms.length == 6) {
-					Predicate p1 = new Predicate(terms[0].replace("_A","").replace("_B","").replace("_C","").replace("_"," "), 
-							terms[1].replace("_A","").replace("_B","").replace("_C","").replace("_"," "), 
-							terms[2].replace("_A","").replace("_B","").replace("_C","").replace("_"," ")); 
-					Predicate p2 = new Predicate(terms[3].replace("_A","").replace("_B","").replace("_C","").replace("_"," "), 
-							terms[4].replace("_A","").replace("_B","").replace("_C","").replace("_"," "), 
-							terms[5].replace("_A","").replace("_B","").replace("_C","").replace("_"," "));
-					for (int i = 0; i < newLinkingPreds.size(); i++) {
-						Predicate pTest = newLinkingPreds.get(i);
-						if (pTest.equals(p1) && !newLinkingPreds.contains(p2)) {
-							System.out.println("Adding " + p2);
-							newLinkingPreds.add(p2);
-						}
-						if (pTest.equals(p2) && !newLinkingPreds.contains(p1)) {
-							System.out.println("Adding " + p1);
-							newLinkingPreds.add(p1);
-						}
-					}
-				}
-			}
-			
-			System.out.println("Size:" + newLinkingPreds.size());
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		
-		//Create new table with original linkers and new entailed linkers
-		
-		try {
-			Statement stmt = connection.createStatement();
-			stmt.execute("Select * from linkers");
-		
-			String createLinkerTable = "CREATE TABLE linkers(relation VARCHAR2(500)," +
-						   		 "argClass1 VARCHAR2(500)," +
-						   		 "argClass2 VARCHAR2(500))";
-		
-				stmt = connection.createStatement();
-				stmt.execute("DROP TABLE linkers");
-				stmt.execute(createLinkerTable);
-				for (int i=0; i < newLinkingPreds.size(); i++) {
-					stmt.execute("INSERT INTO linkers VALUES ('" + newLinkingPreds.get(i).relation + "', '"
-									+ newLinkingPreds.get(i).arg1 + "', '" + newLinkingPreds.get(i).arg2 + "')");
-				}
-				for (int i=0; i < linkingPreds.size(); i++) {
-					stmt.execute("INSERT INTO linkers VALUES ('" + linkingPreds.get(i).relation + "', '"
-									+ linkingPreds.get(i).arg1 + "', '" + linkingPreds.get(i).arg2 + "')");
-				}
-			} catch (SQLException f) {
-				f.printStackTrace();
-			}
-		
-		
-		
-		//Modify type1join to pull linkers from new table
-		
-		return newLinkingPreds;
-	}
-	*/
-	
-	
-	public static TreeMap<String,Double> getLinkingPredsAuto() {
-		TreeMap<String, Double> ubiquity = new TreeMap<String,Double>();
-		TreeMap<TypedPair, ArrayList<String>> relationList = new TreeMap<TypedPair, ArrayList<String>>();
-		//produce list of relations
-		String query = "SELECT * FROM sherlocktypedrelations";
-		try {
-			Statement stmt = connection.createStatement();
-			ResultSet rset = stmt.executeQuery(query);
-			
-			rset.next();
-			ArrayList<String> relations = new ArrayList<String>();
-			String relation = rset.getString("relation");
-			String arg1 = rset.getString("argClass1");
-			String arg2 = rset.getString("argClass2");
-			TypedPair pair = new TypedPair(arg1, arg2);
-			relations.add(relation);
-			relationList.put(pair, relations);
-			while (rset.next()) {
-				relations = new ArrayList<String>();
-				relation = rset.getString("relation");
-				arg1 = rset.getString("argClass1");
-				arg2 = rset.getString("argClass2");
-				pair = new TypedPair(arg1, arg2);
-				if (relationList.containsKey(pair)) {
-					relations = relationList.get(pair);
-					relations.add(relation);
-					relationList.put(pair, relations);
-				} else {
-					relations.add(relation);
-					relationList.put(pair, relations);
-				}
-			}
-			
-			Collection<ArrayList<String>> values = relationList.values();
-			Iterator<ArrayList<String>> it = values.iterator();
-			double count = -1;
-			
-			while (it.hasNext()) {
-				ArrayList<String> it2 = (ArrayList<String>)it.next();
-				Iterator<String> it3 = it2.iterator();
-				while (it3.hasNext()) {
-					String newRelation = it3.next();
-					if (ubiquity.containsKey(newRelation)) {
-						count = ubiquity.get(newRelation);
-						count++;
-						ubiquity.put(newRelation,count);
-					} else {
-						count = 1;
-						ubiquity.put(newRelation,count);
-					}
-				}
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		
-		//produce list of typed pairs
-		//produce Map<TypedPair, ArrayList<String>> mapping
-		//   typed pairs to list of relations
-		//produce final TreeMap by crawling through Map and
-		//  incrementing relation count for each typed pair
-		//  instance found
-		return ubiquity;
-	}
 	
 	public static void partitionRules(ArrayList<Predicate> linkingPreds, ArrayList<Rule> rules) {
 		ArrayList<Rule> linkingRules = new ArrayList<Rule>();
@@ -413,24 +246,47 @@ public class pipeline {
         //add a flag so this doesn't need to be commented
         //ArrayList<Predicate> extraPreds = addLinkersByEntailment();
         
-        //ArrayList<Rule> rules = type1join();
-        ArrayList<Predicate> linkingPreds = getLinkingPreds();
-        ArrayList<Rule> sherlockRules = getSherlockRules();
-        partitionRules(linkingPreds, sherlockRules);
         
-        //TreeMap<String,Double> ubiquity = getLinkingPredsAuto();
-        //printRules("ubiquity.csv", ubiquity);
-        //RulePrinter.printRules("rulesTotal.csv", rules, true);
-        RulePrinter.printPredicates("sherlock_linking_predicates.txt", linkingPreds, false);
+        //get manual list of linking predicates
+        Set<Predicate> linkingPreds = getLinkingPreds();
+        
+        //retrieve and print all ORG rules
+        Set<Rule> ORGrules = getORGrules(linkingPreds);
+ 
+        //retrieve all Sherlock Rules
+        Set<Rule> sherlockRules = getSherlockRules();
+        
+        
+        Set<Rule> ORGrulesMinus = Operators.setMinus(ORGrules, sherlockRules);
+        Set<Rule> sherlockRulesMinus = Operators.setMinus(sherlockRules, ORGrules);
+        Set<Rule> ORGsherlockIntersect = Operators.setIntersection(ORGrules, sherlockRules);
+        
+        //sample rules
+        Set<Rule> ORGsamples = Evaluator.sample(ORGrules,100);
+        Set<Rule> sherlockSamples = Evaluator.sample(sherlockRules, 100);
+        
+        /*
+        ArrayList<Predicate> sherlockPreds = getSherlockPreds();
+        new PredicateClustering(sherlockPreds, "auto_linking.txt");
+        //partitionRules(linkingPreds, sherlockRules);
+        */
+
+        //printing predicates and rules
+        RulePrinter.printPredicates("sherlock_linking_predicates_manual.txt", linkingPreds, false);
+        //RulePrinter.printPredicates("sherlock_predicates.txt", sherlockPreds, false);
+        
+        RulePrinter.printRules("ORG_rules.txt", ORGrules, false);
         RulePrinter.printRules("sherlock_rules.txt", sherlockRules, false);
+        RulePrinter.printRules("ORG_rules_minus.txt", ORGrulesMinus, false);
+        RulePrinter.printRules("sherlock_rules_minus.txt", sherlockRulesMinus, false);
+        RulePrinter.printRules("ORG_sherlock_intersection.txt", ORGsherlockIntersect, false);
+        RulePrinter.printRules("ORG_samples.txt", ORGsamples, false);
+        RulePrinter.printRules("sherlock_samples.txt", sherlockSamples, false);
         
+        //evaluate rules
+        Evaluator.evaluate("auto_linking.txt", "sherlock_linking_predicates_manual.txt");
         //Evaluator.evaluate(rules, sherlockRules, true);
-        //evalTest(rules, sherlockRules);
-        //build list of linking predicates
-        //extract all predicates sharing one linking argument and build up rules
-        
-        /*processRules(getLength2rules());*/
-  
+       
         
 	}
 

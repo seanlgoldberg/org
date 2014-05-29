@@ -1,12 +1,10 @@
 package analysis;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
+import java.io.*;
+import java.util.*;
 
 public class Evaluator {
-
+/*
 	public static void evaluate(ArrayList<Rule> candidate, ArrayList<Rule> truth, boolean multFiles) {
 		HashSet<Rule> matching = new HashSet<Rule>();
 		HashSet<Rule> nonMatching = new HashSet<Rule>();
@@ -36,6 +34,42 @@ public class Evaluator {
 		}
 	}
 	
+*/
+	
+	public static void evaluate(String file1, String file2) {
+		Set<String> predictions = new HashSet<String>();
+		Set<String> gold_truth = new HashSet<String>();
+		try {
+			BufferedReader br1 = new BufferedReader(new FileReader("results/" + file1));
+			BufferedReader br2 = new BufferedReader(new FileReader("results/" + file2));
+			while(true) {
+				String line = br1.readLine();
+				if (line == null) break;
+				predictions.add(line);
+			}
+			while(true) {
+				String line = br2.readLine();
+				if (line == null) break;
+				gold_truth.add(line);
+			}
+			//create a copy of predictions
+			Set<String> tmp = new HashSet<String>();
+			for (String s : predictions) {
+				tmp.add(s);
+			}
+			tmp.retainAll(gold_truth);
+			
+			double precision = ((double) tmp.size())/predictions.size();
+			double recall = ((double) tmp.size())/gold_truth.size();
+			System.out.println("Predictions Size: " + predictions.size());
+			System.out.println("Gold Truth Size: " + gold_truth.size());
+			System.out.println("Intersection Size: " + tmp.size());
+			System.out.println("Precision: " + precision);
+			System.out.println("Recall: " + recall);
+		} catch(IOException ex) {
+			ex.printStackTrace();
+		}
+	}
 	
 	
 	public static void evalTest(ArrayList<Rule> candidate, ArrayList<Rule> truth) {
@@ -54,5 +88,16 @@ public class Evaluator {
 		} catch(IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public static Set<Rule> sample(Set<Rule> rules, int sampleSize) {
+		//TODO: Keep sampling rules until set size equals sampleSize
+		List<Rule> tmpRules = new ArrayList<Rule>(rules);
+		Set<Rule> sampledRules = new HashSet<Rule>();
+		for (int i = sampleSize; sampleSize > 0; sampleSize--) {
+			int sampleIdx = (int)(Math.random()*tmpRules.size());
+			sampledRules.add(tmpRules.get(sampleIdx));
+		}
+		return sampledRules;
 	}
 }

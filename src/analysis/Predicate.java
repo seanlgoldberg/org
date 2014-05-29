@@ -1,6 +1,8 @@
 package analysis;
 
-public class Predicate {
+import java.util.Comparator;
+
+public class Predicate implements Comparable<Predicate>,Comparator<Predicate>{
 
 	String arg1;
 	String arg2;
@@ -23,5 +25,23 @@ public class Predicate {
 			return true;
 		}
 		return false;
+	}
+	
+	public int compareTo(Predicate p) {
+		if (this.relation.equals(p.relation)) {
+			if (this.arg1.equals(p.arg1)) {
+				return this.arg2.compareTo(p.arg2);
+			}
+			else {
+				return this.arg1.compareTo(p.arg1);
+			}
+		}
+		else {
+			return this.relation.compareTo(p.relation);
+		}
+	}
+	
+	public int compare(Predicate p1, Predicate p2) {
+		return p1.compareTo(p2);
 	}
 }
