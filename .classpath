@@ -4,5 +4,19 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="C:/Users/Sean/Downloads/eclipse/workspace/ORG/lib/ojdbc5.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Sean/Downloads/grappa/archives/grappa1_2.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Sean/Documents/workspace/ORG/lib/commons-codec-1.6.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Sean/Documents/workspace/ORG/lib/httpclient-4.2.3.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Sean/Documents/workspace/ORG/lib/httpcore-4.2.2.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Sean/Documents/workspace/ORG/lib/jcl-over-slf4j-1.6.4.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Sean/Documents/workspace/ORG/lib/jena-arq-2.11.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Sean/Documents/workspace/ORG/lib/jena-core-2.11.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Sean/Documents/workspace/ORG/lib/jena-iri-1.0.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Sean/Documents/workspace/ORG/lib/jena-sdb-1.4.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Sean/Documents/workspace/ORG/lib/jena-tdb-1.0.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Sean/Documents/workspace/ORG/lib/log4j-1.2.16.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Sean/Documents/workspace/ORG/lib/slf4j-api-1.6.4.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Sean/Documents/workspace/ORG/lib/slf4j-log4j12-1.6.4.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Sean/Documents/workspace/ORG/lib/xercesImpl-2.11.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Sean/Documents/workspace/ORG/lib/xml-apis-1.4.01.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
