@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<project name="ORG" default="execute">
+
+	<property name="build.classes.dir"
+		location="build/classes" />
+	<property name="build.lib.dir"
+		value="lib" />
+
+	<path id="build.classpath.dir">
+		<fileset dir="${build.lib.dir}">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+
+
+	<target name="init">
+		<mkdir dir="${build.classes.dir}" />
+		<mkdir dir="dist" />
+	</target>
+
+	<target name="compile" depends="init">
+		<javac 
+			srcdir="src" 
+			destdir="${build.classes.dir}"
+			includeAntRuntime="no" >
+				<classpath refid="build.classpath.dir" />
+		</javac>
+		<echo>Compilation complete!</echo>
+	</target>
+
+	<target name="archive" depends="compile">
+		<jar destfile="dist/project.jar"
+			basedir="build/classes" />
+	</target>
+
+	<target name="clean" depends="init">
+		<delete dir="build" />
+		<delete dir="dist" />
+	</target>
+
+	<target name="execute" depends="compile">
+		<java
+			classname="system.Test"
+			classpath="build/classes">
+			<classpath refid="build.classpath.dir" />
+		</java>
+	</target>
+
+</project>
