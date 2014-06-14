@@ -7,10 +7,12 @@ public class Test {
 	public static void main(String[] args) {
 		
 		String db = "http://dbpedia.org/resource";
+		//String dataLoc = "data/mappingbased_properties_cleaned_en.ttl";
+		String dataLoc = "/data/d01/freebase2/data/SPO.dat";
 		
 		//Generate new model based on DBpedia properties
 		Model model = ModelFactory.createDefaultModel();
-		model.read("data/mappingbased_properties_cleaned_en.ttl");
+		model.read(dataLoc);
 		
 		String queryString = "SELECT ?p " + 
 							"WHERE { <" + db + "/Autism> ?p ?o }";
